@@ -1,0 +1,38 @@
+services:
+  frontend:
+    container_name: kari-frontend
+    build:
+      context: .
+      dockerfile: .docker/frontend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - kari-net
+
+  backend:
+    container_name: kari-backend
+    build:
+      context: .
+      dockerfile: .docker/backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=${DEBUG:-true}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./backend:/app
+    networks:
+      - kari-net
+
+networks:
+  kari-net:
+    driver: bridge
