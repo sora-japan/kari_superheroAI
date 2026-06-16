@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Phone, LogOut, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
+import { Phone, X, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '@/lib/api'
 
 const SAFE_URL = 'https://www.google.com/search?q=天気'
@@ -118,6 +118,17 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
     [input, loading, sessionId],
   )
 
+  const handleComingSoon = (label: string) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: `「${label}」は現在実装予定の機能です。`,
+        timestamp: new Date(),
+      },
+    ])
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -131,36 +142,30 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
 
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg-primary)]">
-      {/* 3-column header */}
-      <header className="flex-shrink-0 flex items-stretch min-h-[60px]">
-        <a
-          href="tel:#8889"
-          className="flex-1 bg-[var(--color-danger)] text-white flex flex-col items-center justify-center py-2 px-2 text-center"
-        >
-          <div className="flex items-center gap-1">
-            <Phone size={12} />
-            <span className="text-xs font-bold">緊急時はこちら</span>
-          </div>
-          <span className="text-[9px] opacity-80 mt-0.5">すぐに電話をかける</span>
-        </a>
-
-        <div className="flex-[1.3] bg-[var(--color-bg-card)] border-x border-[var(--color-border)] flex flex-col items-center justify-center py-2 px-2 text-center">
-          <div className="flex items-center gap-1.5">
-            <HeartHandshake size={13} className="text-[var(--color-accent)]" />
-            <span className="text-sm font-bold text-[var(--color-text-primary)]">あなたの味方</span>
-          </div>
-          <span className="text-[9px] text-[var(--color-text-muted)] mt-0.5">DV相談サポート</span>
+      {/* Header - welcome screen と統一 */}
+      <header className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-[var(--color-border)]">
+        <div className="flex gap-2">
+          <a
+            href="tel:110"
+            className="flex items-center gap-1.5 bg-[var(--color-danger)] text-white px-3 py-2 rounded-xl text-sm font-bold shadow-sm"
+          >
+            <Phone size={14} />
+            110
+          </a>
+          <a
+            href="tel:#8891"
+            className="flex items-center gap-1.5 bg-[var(--color-danger)] text-white px-3 py-2 rounded-xl text-sm font-bold shadow-sm"
+          >
+            <Phone size={14} />
+            #8891
+          </a>
         </div>
-
         <button
           onClick={() => window.location.replace(SAFE_URL)}
-          className="flex-1 bg-[#7B5EA7] text-white flex flex-col items-center justify-center py-2 px-2 text-center transition-opacity hover:opacity-90"
+          className="flex items-center gap-1.5 border-2 border-red-300 text-red-400 bg-red-50 px-3 py-2 rounded-xl text-sm font-bold transition-colors hover:bg-red-100"
         >
-          <div className="flex items-center gap-1">
-            <LogOut size={12} />
-            <span className="text-xs font-bold">クイック退出</span>
-          </div>
-          <span className="text-[9px] opacity-80 mt-0.5">画面をすぐに閉じる</span>
+          <X size={14} />
+          すぐ閉じる
         </button>
       </header>
 
@@ -257,7 +262,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
               emoji="✅"
               label="DVチェックリスト"
               sub="状況を確認してみる"
-              onClick={() => {}}
+              onClick={() => handleComingSoon('DVチェックリスト')}
               colorClass="bg-teal-50 border-teal-200 text-teal-800"
             />
             <FooterActionButton

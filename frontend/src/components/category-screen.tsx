@@ -53,7 +53,7 @@ export function CategoryScreen({ onBack, onStartChat }: Props) {
           className="flex items-center gap-1.5 border-2 border-red-300 text-red-400 bg-red-50 px-3 py-2 rounded-xl text-sm font-bold transition-colors hover:bg-red-100"
         >
           <X size={14} />
-          クイック退出
+          すぐ閉じる
         </button>
       </div>
 
