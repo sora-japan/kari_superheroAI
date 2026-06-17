@@ -704,3 +704,135 @@
   ```
 
   「関数に型注釈」ではなく「**この関数が返す値**に型注釈」です。
+
+---
+
+## res.json()
+
+❯ `return res.json()` ってなんですか？
+
+● `res.json()` = 「サーバーから返ってきたデータをJavaScriptのオブジェクトに変換する」関数です。
+
+  ---
+  `fetch` の返り値を2段階で受け取る
+
+  ```ts
+  const res = await fetch(...)
+  //    ^^^
+  //    fetch の戻り値 = Response オブジェクト（ブラウザが提供）
+
+  return res.json()
+  //     封筒の中の「中身（JSON文字列）」を取り出してオブジェクトに変換する
+  ```
+
+  ---
+  なぜ2段階なのか
+
+  サーバーが返すデータは最初「テキスト（文字列）」として届きます。
+
+  ```
+  サーバーの返答（テキスト）:
+  '{"reply": "こんにちは", "session_id": "abc123"}'
+
+  ↓ res.json() で変換
+
+  JavaScriptのオブジェクト:
+  { reply: "こんにちは", session_id: "abc123" }
+  ```
+
+  C言語で例えると：
+
+  ```c
+  char* raw = receive_from_server();      // 生テキストで届く
+  struct Response res = parse_json(raw);  // 構造体に変換
+  ```
+
+  `res.json()` がその変換処理に相当します。
+
+  ---
+  `res.json()` は Promise を返す
+
+  ```ts
+  return res.json()
+  // res.json() は Promise を返す
+  // sendMessage 自体が async なので、呼び出し側は await で受け取れる
+  ```
+
+  呼び出し側（chat-layout.tsx）では：
+
+  ```ts
+  const data = await sendMessage(content, sessionId)
+  // data = { reply: "...", session_id: "..." }
+  data.reply      // AIの返信テキスト
+  data.session_id // セッションID
+  ```
+
+  `res.json()` で変換されたオブジェクトが最終的に `data` に入ります。
+
+  ---
+
+❯ `json()` をどこかで import しているそぶりがないんですが、これは標準で使えるんですか？また、`res.json()` とした場合、res の中身を JavaScript のオブジェクトにした上で return しているということなんですか？
+
+● 2つとも正確な理解です。
+
+  ---
+  質問1：json() はどこからきているのか
+
+  `json()` は `res` オブジェクトが持っているメソッドです。import は不要です。
+
+  ```ts
+  const res = await fetch(...)
+  //    ^^^
+  //    fetch の戻り値 = Response オブジェクト（ブラウザが提供）
+  ```
+
+  `fetch()` はブラウザが標準で持っている機能で、戻り値として `Response` というオブジェクトを返します。この `Response` オブジェクトが最初から `json()` メソッドを持っています。
+
+  C言語で例えると：
+
+  ```c
+  // FILE* を fopen で受け取ると、fread などのメソッドが使えるのと同じイメージ
+  FILE* res = fopen(...);   // FILE構造体が返ってくる
+  fread(buf, ..., res);     // FILE構造体が持つ操作を使う
+
+  // JavaScript
+  const res = await fetch(...)  // Response オブジェクトが返ってくる
+  res.json()                    // Response が持つメソッドを使う
+  ```
+
+  `fetch` / `Response` / `json()` はすべてブラウザの標準機能なので import 不要です。
+
+  ---
+  質問2：res の中身をオブジェクトに変換して return しているか
+
+  そうです。ただし正確には「`res` 全体」ではなく「`res` の中のボディ（本文）」を変換しています。
+
+  ```ts
+  const res = await fetch(...)
+  // res の中身:
+  //   res.ok      → 通信成功かどうか（true/false）
+  //   res.status  → ステータスコード（200, 404 など）
+  //   res.body    → サーバーが返したテキストデータ（本文）← これが対象
+
+  return res.json()
+  // res.body（テキスト）を読み取って JavaScript オブジェクトに変換して返す
+  ```
+
+  封筒で例えると：
+
+  ```
+  res = 封筒全体
+    ├── res.ok     = 「正常に届いたか」のスタンプ
+    ├── res.status = 「ステータスコード」
+    └── res.body   = 封筒の中の手紙（JSON テキスト）
+
+  res.json() = 手紙を取り出して読み込む
+  ```
+
+  ---
+  まとめ
+
+  ```
+  json()        → import 不要。fetch の戻り値（Response）が最初から持っているメソッド
+  res.json()    → res の本文（JSON テキスト）を JavaScript オブジェクトに変換して返す
+  ```
