@@ -130,3 +130,577 @@
   ```
 
   C言語は「終わるまで勝手に止まる」ので Promise が不要でした。JavaScriptは「止まらない」ので、Promise という仕組みで「後で届く値」を扱います。
+
+  ---
+
+❯ `sendMessage( a ): Promise<{ b }>{ c }` この形式だと思ったんですが、`( a )` のあとのコロンってどういう意味があるんですか？型注釈ですか？
+
+● はい、型注釈です。**関数の戻り値の型注釈**です。
+
+  ---
+  場所による型注釈の書き方の違い
+
+  ```ts
+  const screen: Screen = 'welcome'        // 変数の型注釈：変数名の後
+  (message?: string)                      // 引数の型注釈：引数名の後
+  ): Promise<...> {                       // 戻り値の型注釈：引数リストの後
+  ```
+
+  全部コロンの後に型を書く、という点は同じです。書く場所が違うだけです。
+
+  ---
+  関数の構造で見ると
+
+  ```ts
+  function sendMessage(
+    message: string,     // 引数の型注釈
+    sessionId?: string,  // 引数の型注釈
+  ): Promise<{ reply: string; session_id: string }>  // ← 戻り値の型注釈
+  {
+    // 処理
+    return res.json()   // ← これが Promise<...> 型である必要がある
+  }
+  ```
+
+  ---
+  C言語で例えると
+
+  ```c
+  // C言語では戻り値の型は関数名の前に書く
+  Promise sendMessage(char* message, char* sessionId) {
+  //^^^^^^
+  // 戻り値の型
+  ```
+
+  ```ts
+  // TypeScript では引数リストの後に書く
+  function sendMessage(message: string): Promise<...> {
+  //                                   ^^^^^^^^^^^^
+  //                                   戻り値の型
+  ```
+
+  書く位置がC言語と逆なだけで、意味は同じです。
+
+  ---
+
+❯ `const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'` `??` ってなんではてなが二つあるんですか？`&&` みたいな感じですか？
+
+● `&&` とは別物です。**「左が null/undefined なら右を使う」** という演算子です。
+
+  ---
+  `??` の意味
+
+  ```ts
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+  //                           ^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^^^^^
+  //                           左：環境変数の値         右：デフォルト値
+  ```
+
+  「環境変数に値が設定されていればそれを使う、**なければ** `'http://localhost:8000'` を使う」という意味です。
+
+  ---
+  C言語で例えると
+
+  ```c
+  char* api_url = getenv("NEXT_PUBLIC_API_URL");
+  char* API_BASE = (api_url != NULL) ? api_url : "http://localhost:8000";
+  //               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  //               三項演算子で「NULLなら右を使う」
+  ```
+
+  `??` はこの三項演算子を短く書いたものです。
+
+  ---
+  `&&` との違い
+
+  ```ts
+  A && B    // A が「真」なら B を返す
+  A ?? B    // A が「null/undefined」なら B を返す
+  ```
+
+  用途が全然違います。
+
+  ```ts
+  '' ?? 'デフォルト'    // → ''  （空文字は null でないのでそのまま）
+  '' && 'デフォルト'    // → ''  （空文字は偽なので左を返す）
+
+  null ?? 'デフォルト'  // → 'デフォルト'
+  null && 'デフォルト'  // → null
+  ```
+
+  `??` は「値が**存在しない**とき」だけ右を使います。
+
+  ---
+  この行の意味まとめ
+
+  ```ts
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+  ```
+
+  - 本番環境など → 環境変数に URL が設定されている → その URL を使う
+  - ローカル開発中 → 環境変数が未設定（undefined） → `localhost:8000` を使う
+
+  ---
+
+❯ `process.env` ってなんですか
+
+● process.env = 環境変数を読む仕組み
+
+  ---
+  環境変数とは
+
+  プログラムの外側（OS やサーバー設定）で定義された変数です。コードに直接書かずに済む値を外から渡せます。
+
+  ```
+  本番サーバー: NEXT_PUBLIC_API_URL = "https://api.example.com"
+  開発PC:      NEXT_PUBLIC_API_URL = 未設定
+  ```
+
+  ---
+  C言語で例えると
+
+  ```c
+  #include <stdlib.h>
+
+  // C言語でも環境変数を読む関数がある
+  char* api_url = getenv("NEXT_PUBLIC_API_URL");
+  ```
+
+  `process.env.変数名` は C言語の `getenv("変数名")` と同じ意味です。
+
+  ---
+  `process` とは
+
+  Node.js（JavaScriptの実行環境）が提供するオブジェクトです。実行中のプログラム自体の情報が入っています。
+
+  ```ts
+  process.env   // 環境変数一覧
+  process.env.NEXT_PUBLIC_API_URL  // 特定の環境変数の値
+  ```
+
+  `.` でつないでプロパティにアクセスするのは、C言語の構造体メンバへのアクセスと同じ感覚です。
+
+  ```c
+  // C言語の構造体アクセスと同じ感覚
+  process.env  →  process->env
+  ```
+
+  ---
+  なぜ直接コードに書かないのか
+
+  ```ts
+  // こうしてしまうと…
+  const API_BASE = 'https://api.example.com'
+  ```
+
+  - 本番URLがソースコードに露出する
+  - 環境ごとに変えたいとき毎回コードを書き換える必要がある
+
+  環境変数にすることで、**コードを変えずに環境ごとに値を切り替えられます**。
+
+  ---
+
+❯ `${API_BASE}/api/v1/chat` `API_BASE` って環境変数ですか？
+
+● 違います。`API_BASE` は**このファイルの先頭で定義した変数**です。
+
+  ---
+  1行目を見ると
+
+  ```ts
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+  //    ^^^^^^^^
+  //    これが API_BASE という変数
+  ```
+
+  `process.env.NEXT_PUBLIC_API_URL` が環境変数で、それを読んで `API_BASE` に入れています。
+
+  ---
+  流れで整理すると
+
+  ```
+  環境変数 NEXT_PUBLIC_API_URL
+    ↓ process.env で読み出す
+    ↓ ?? で「なければ localhost:8000」
+  const API_BASE に代入
+    ↓
+  fetch の URL に使う
+  ```
+
+  ---
+  C言語で例えると
+
+  ```c
+  // 環境変数を読んで変数に入れる
+  char* env_val = getenv("NEXT_PUBLIC_API_URL");
+  char* API_BASE = (env_val != NULL) ? env_val : "http://localhost:8000";
+
+  // その変数を使う
+  char url[256];
+  sprintf(url, "%s/api/v1/chat", API_BASE);
+  http_request(url, ...);
+  ```
+
+  `API_BASE` は「環境変数から読んだ値を入れておく普通の変数」です。
+
+  ---
+
+❯ `${API_BASE}` ってなんで `${}` でくくっているんですか？
+
+● バッククォートで囲まれた文字列の中に変数を埋め込むための構文です。
+
+  ---
+  バッククォートと `${}` の関係
+
+  JavaScriptには文字列の書き方が2種類あります。
+
+  ```ts
+  '普通の文字列'         // シングルクォート：変数を埋め込めない
+  `テンプレート文字列`   // バッククォート：${}で変数を埋め込める
+  ```
+
+  `${}` はバッククォートの中でしか使えません。
+
+  ---
+  変数を埋め込む
+
+  ```ts
+  const API_BASE = 'http://localhost:8000'
+
+  `${API_BASE}/api/v1/chat`
+  // → 'http://localhost:8000/api/v1/chat'
+  ```
+
+  `${}` の中に変数を書くと、その値に展開されます。
+
+  ---
+  C言語で例えると
+
+  ```c
+  // C言語では sprintf で文字列に変数を埋め込む
+  char url[256];
+  sprintf(url, "%s/api/v1/chat", API_BASE);
+  ```
+
+  ```ts
+  // TypeScript では ${}で直接埋め込める
+  const url = `${API_BASE}/api/v1/chat`
+  ```
+
+  C言語の `%s` に相当するのが `${}` です。
+
+  ---
+  `${}` の中はJavaScriptとして評価される
+
+  ```ts
+  `${API_BASE}/api/v1/chat`   // 変数
+  `${1 + 2}個`                // 式も書ける → '3個'
+  `${'hello'.toUpperCase()}`  // 関数呼び出しも書ける → 'HELLO'
+  ```
+
+  `{}` の中であれば何でも書けます。
+
+  ---
+
+❯ `body:` ってなにが入っているんですか？
+
+● body = サーバーに送るデータ本体
+
+  HTTPリクエストの「荷物」にあたる部分です。
+
+  ---
+  `JSON.stringify({ message, session_id: sessionId })` を分解する
+
+  ```ts
+  body: JSON.stringify({ message, session_id: sessionId })
+  ```
+
+  **まず `{}` の中身から：**
+
+  ```ts
+  { message, session_id: sessionId }
+  ```
+
+  これはオブジェクトです。2つのプロパティを持っています。
+
+  ```ts
+  {
+    message: message,        // 送るメッセージ文字列
+    session_id: sessionId,   // セッションID
+  }
+  ```
+
+  `message` は `message: message` の省略形です（名前が同じとき省略できます）。
+
+  ---
+  `JSON.stringify` で文字列に変換
+
+  ```ts
+  JSON.stringify({ message: "こんにちは", session_id: "abc123" })
+  // → '{"message":"こんにちは","session_id":"abc123"}'
+  ```
+
+  オブジェクトをそのままHTTPで送れないので、JSON文字列に変換しています。
+
+  ---
+  C言語で例えると
+
+  ```c
+  // 送るデータを文字列に変換してbodyに入れる
+  char body[512];
+  sprintf(body, "{\"message\":\"%s\",\"session_id\":\"%s\"}", message, sessionId);
+
+  HttpRequest req = {
+      .method  = "POST",
+      .headers = "Content-Type: application/json",
+      .body    = body,   // ← ここに入る
+  };
+  ```
+
+  ---
+  method / headers / body の役割
+
+  ```
+  method: 'POST'     → 「データを送る」という操作の種類
+  headers:           → 「bodyはJSON形式ですよ」という宣言
+  body:              → 実際に送るデータ
+  ```
+
+  手紙で例えると、`headers` が封筒の表書き、`body` が中身の手紙です。
+
+  ---
+
+❯ fetchの戻り値って何なんですか？
+
+● fetch の戻り値は `Response` オブジェクトです
+
+  ```ts
+  const res = await fetch(...)
+  //    ^^^
+  //    Response オブジェクトが入る
+  ```
+
+  サーバーからの「返事一式」が入ったオブジェクトです。
+
+  ---
+  Response オブジェクトの中身
+
+  コードで使われているものを見ると：
+
+  ```ts
+  res.ok      // 通信が成功したか？ → true / false
+  res.status  // HTTPステータスコード → 200, 404, 500 など
+  res.json()  // bodyをJSONとして読み出す → オブジェクトが返る
+  ```
+
+  ---
+  C言語で例えると
+
+  ```c
+  typedef struct {
+      int   ok;      // 成功したか
+      int   status;  // ステータスコード
+      char* body;    // レスポンスの中身
+  } Response;
+
+  Response res = http_request(url, req);
+  ```
+
+  ---
+  コードの流れで見ると
+
+  ```ts
+  const res = await fetch(...)       // Response が届く
+
+  if (!res.ok) {                     // 失敗していたら
+    throw new Error(`API error: ${res.status}`)  // エラーを投げる
+  }
+
+  return res.json()                  // 成功していたら中身を返す
+  ```
+
+  ```
+  res.ok = true  → res.json() でデータを取り出して return
+  res.ok = false → エラーを throw（例外を投げる）
+  ```
+
+  ---
+  `res.json()` の戻り値
+
+  ```ts
+  return res.json()
+  // → { reply: string; session_id: string } が返る
+  ```
+
+  これが関数の戻り値の型 `Promise<{ reply: string; session_id: string }>` に対応しています。
+
+  ---
+
+❯ `try {} catch {}` ってなんですか？
+
+● try/catch = エラーが起きたときの対処の仕組み
+
+  ---
+  構造
+
+  ```ts
+  try {
+    // 試みる処理
+  } catch {
+    // 失敗したときの処理
+  }
+  ```
+
+  「まず `try` の中を実行する。エラーが起きたら `catch` の中を実行する」という意味です。
+
+  ---
+  C言語との違い
+
+  C言語にはtry/catchがありません。エラーは戻り値で判定していました。
+
+  ```c
+  // C言語：戻り値でエラー判定
+  int res = http_request(url);
+  if (res < 0) {
+      return false;  // 失敗
+  }
+  return true;
+  ```
+
+  JavaScriptでは通信失敗時に**例外（エラー）が投げられる**ので、try/catchで受け取ります。
+
+  ---
+  このコードの流れ
+
+  ```ts
+  try {
+    const res = await fetch(...)  // 通信を試みる
+    return res.ok                 // 成功したら true/false を返す
+  } catch {
+    return false                  // 通信自体が失敗したら false を返す
+  }
+  ```
+
+  ```
+  通信成功 → res.ok を返す（サーバーが応答した = true）
+  通信失敗 → catch に入る → false を返す（サーバーに繋がらなかった）
+  ```
+
+  ---
+  `sendMessage` との違い
+
+  ```ts
+  // sendMessage：エラーをそのまま投げる
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status}`)
+  }
+
+  // checkHealth：エラーを握りつぶして false を返す
+  } catch {
+    return false
+  }
+  ```
+
+  `checkHealth` は「繋がるかどうか確認するだけ」の関数なので、失敗しても `false` を返すだけで十分です。
+
+  ---
+
+❯ `sendMessage` と `checkHealth` との使い道の違いって実際どういう風になっているのですか？
+
+● 実は `checkHealth` は `chat-layout.tsx` では**使われていません**。
+
+  ---
+  chat-layout.tsx の import を見ると
+
+  ```ts
+  import { sendMessage, type ChatMessage } from '@/lib/api'
+  //       ^^^^^^^^^^^
+  //       sendMessage だけ使っている
+  //       checkHealth は import されていない
+  ```
+
+  ---
+  `sendMessage` の実際の使われ方
+
+  コードの中で2か所使われています。
+
+  **① チャット画面を開いたとき（初回メッセージの自動送信）**
+
+  ```ts
+  sendMessage(content, undefined)   // 64行目
+    .then(...)   // 成功したら返信を表示
+    .catch(...)  // 失敗したらエラーメッセージを表示
+  ```
+
+  **② ユーザーがメッセージを送信したとき**
+
+  ```ts
+  const data = await sendMessage(content, sessionId)  // 97行目
+  ```
+
+  ---
+  `checkHealth` は現時点では未使用
+
+  `api.ts` に定義はされていますが、どこからも呼ばれていません。
+
+  「サーバーが起動しているか確認する」用途で作られた関数と思われますが、現状のコードでは使われていない状態です。将来的にチャット画面を開く前にサーバーの死活確認をする、といった使い方を想定して用意されているのかもしれません。
+
+  ---
+
+❯ `const makeInitialMessage = (): DisplayMessage => ({*})` 関数を DisplayMessage に型注釈している←？という理解でいいんですか？
+
+● 少し違います。**関数の戻り値**に型注釈しています。
+
+  ---
+  構造を分解すると
+
+  ```ts
+  const makeInitialMessage = (): DisplayMessage => ({ ... })
+  //                          ^   ^^^^^^^^^^^^^
+  //                          |   戻り値の型注釈（この関数はDisplayMessageを返す）
+  //                          引数リスト（空）
+  ```
+
+  「この関数を呼ぶと `DisplayMessage` 型の値が返ってくる」という宣言です。
+
+  ---
+  api.ts で見たものと同じ
+
+  ```ts
+  // api.ts で見たパターン
+  function sendMessage(...): Promise<{ reply: string; session_id: string }> {
+
+  // 今回のパターン
+  const makeInitialMessage = (): DisplayMessage => ({
+  ```
+
+  どちらも「引数リストの後にコロンで戻り値の型を書く」という同じ構文です。
+
+  ---
+  C言語で例えると
+
+  ```c
+  // C言語：戻り値の型は関数名の前
+  DisplayMessage makeInitialMessage() {
+      return (DisplayMessage){ ... };
+  }
+  ```
+
+  ```ts
+  // TypeScript：戻り値の型は引数リストの後
+  const makeInitialMessage = (): DisplayMessage => ({ ... })
+  ```
+
+  書く位置が違うだけで意味は同じです。
+
+  ---
+  まとめ
+
+  ```
+  (): DisplayMessage => ({ ... })
+  ^^  ^^^^^^^^^^^^^
+  |   戻り値の型注釈
+  引数なし
+  ```
+
+  「関数に型注釈」ではなく「**この関数が返す値**に型注釈」です。
