@@ -67,13 +67,8 @@ export function SafetyModal() {
                 />
                 <TipItem
                   icon="🚪"
-                  title="画面右下の「すぐ閉じる」ボタン"
+                  title="画面右上の「すぐ閉じる」ボタン"
                   detail="押すと即座に別のページに移動し、戻れないようにします"
-                />
-                <TipItem
-                  icon="📵"
-                  title="通知に注意してください"
-                  detail="ブラウザ通知はオフにすることをおすすめします"
                 />
               </div>
 

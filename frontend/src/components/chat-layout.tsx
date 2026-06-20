@@ -1,113 +1,210 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Phone, HeartHandshake, BookOpen } from 'lucide-react'
+import { Phone, X, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '@/lib/api'
 
-const INITIAL_MESSAGE: ChatMessage = {
-  role: 'assistant',
-  content:
-    'こんにちは。ここはあなたが安心して話せる場所です。\nどんなことでも、話せる範囲で教えてください。',
+const SAFE_URL = 'https://www.google.com/search?q=天気'
+const SESSION_SECONDS = 5 * 60
+
+type DisplayMessage = ChatMessage & {
+  timestamp: Date
+  read?: boolean
 }
 
-export function ChatLayout() {
-  const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE])
+const makeInitialMessage = (): DisplayMessage => ({
+  role: 'assistant',
+  content:
+    'こんにちは。ここは、あなたの気持ちに寄り添う場所です。\nどんなことでも、一緒に整理していきましょう。\nまずは、今の状況を教えていただけますか？',
+  timestamp: new Date(),
+})
+
+interface Props {
+  initialMessage?: string
+  onOpenCategories: () => void
+}
+
+export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
+  const [messages, setMessages] = useState<DisplayMessage[]>([makeInitialMessage()])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | undefined>()
+  const [secondsLeft, setSecondsLeft] = useState(SESSION_SECONDS)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const initialSentRef = useRef(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSend = useCallback(async () => {
-    const text = input.trim()
-    if (!text || loading) return
+  // Session safety timer — auto-exit when time runs out
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          window.location.replace(SAFE_URL)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
-    setInput('')
-    setMessages((prev) => [...prev, { role: 'user', content: text }])
+  // Send the message selected on the welcome/category screen
+  useEffect(() => {
+    if (!initialMessage || initialSentRef.current) return
+    initialSentRef.current = true
+
+    const content = initialMessage
+    setMessages((prev) => [...prev, { role: 'user', content, timestamp: new Date() }])
     setLoading(true)
 
-    try {
-      const data = await sendMessage(text, sessionId)
-      setSessionId(data.session_id)
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: data.reply },
-      ])
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content:
-            '申し訳ありません、接続に問題が発生しました。少し待ってからもう一度お試しください。',
-        },
-      ])
-    } finally {
-      setLoading(false)
-      textareaRef.current?.focus()
-    }
-  }, [input, loading, sessionId])
+    sendMessage(content, undefined)
+      .then((data) => {
+        setSessionId(data.session_id)
+        setMessages((prev) => [
+          ...prev.slice(0, -1),
+          { ...prev[prev.length - 1], read: true } as DisplayMessage,
+          { role: 'assistant', content: data.reply, timestamp: new Date() },
+        ])
+      })
+      .catch(() => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: '申し訳ありません、接続に問題が発生しました。少し待ってからもう一度お試しください。',
+            timestamp: new Date(),
+          },
+        ])
+      })
+      .finally(() => setLoading(false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSend = useCallback(
+    async (overrideText?: string) => {
+      const content = overrideText ?? input.trim()
+      if (!content || loading) return
+
+      if (!overrideText) setInput('')
+      setMessages((prev) => [...prev, { role: 'user', content, timestamp: new Date() }])
+      setLoading(true)
+      setSecondsLeft(SESSION_SECONDS) // reset timer on activity
+
+      try {
+        const data = await sendMessage(content, sessionId)
+        setSessionId(data.session_id)
+        setMessages((prev) => [
+          ...prev.slice(0, -1),
+          { ...prev[prev.length - 1], read: true } as DisplayMessage,
+          { role: 'assistant', content: data.reply, timestamp: new Date() },
+        ])
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: '申し訳ありません、接続に問題が発生しました。少し待ってからもう一度お試しください。',
+            timestamp: new Date(),
+          },
+        ])
+      } finally {
+        setLoading(false)
+        textareaRef.current?.focus()
+      }
+    },
+    [input, loading, sessionId],
+  )
+
+  const handleComingSoon = (label: string) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: `「${label}」は現在実装予定の機能です。`,
+        timestamp: new Date(),
+      },
+    ])
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Shift+Enter で改行、Enter のみで送信
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
     }
   }
 
+  const timerMin = Math.floor(secondsLeft / 60)
+  const timerSec = secondsLeft % 60
+  const timerWarning = secondsLeft <= 60
+
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg-primary)]">
-      {/* ヘッダー */}
-      <header className="flex-shrink-0 bg-[var(--color-bg-card)] border-b border-[var(--color-border)] px-4 py-3 shadow-sm">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[var(--color-accent-light)] flex items-center justify-center">
-              <HeartHandshake size={18} className="text-[var(--color-accent-dark)]" />
-            </div>
-            <div>
-              <h1 className="font-bold text-[var(--color-text-primary)] text-base leading-tight">
-                かり
-              </h1>
-              <p className="text-xs text-[var(--color-text-muted)] leading-tight">
-                安心して話せる相談室
-              </p>
-            </div>
-          </div>
-
-          {/* 緊急連絡先ボタン（プレースホルダー） */}
-          <div className="flex items-center gap-2">
-            <button
-              aria-label="緊急相談窓口"
-              title="緊急相談窓口"
-              className="
-                flex items-center gap-1.5 text-xs
-                text-[var(--color-accent-dark)] hover:text-[var(--color-accent)]
-                bg-[var(--color-accent-light)] hover:bg-[var(--color-accent-light)]/80
-                px-3 py-1.5 rounded-full transition-colors
-              "
-            >
-              <Phone size={13} />
-              <span className="hidden sm:inline">相談窓口</span>
-            </button>
-          </div>
+      {/* Header - welcome screen と統一 */}
+      <header className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-[var(--color-border)]">
+        <div className="flex gap-2">
+          <a
+            href="tel:110"
+            className="flex items-center gap-1.5 bg-[var(--color-danger)] text-white px-3 py-2 rounded-xl text-sm font-bold shadow-sm"
+          >
+            <Phone size={14} />
+            110
+          </a>
+          <a
+            href="tel:#8891"
+            className="flex items-center gap-1.5 bg-[var(--color-danger)] text-white px-3 py-2 rounded-xl text-sm font-bold shadow-sm"
+          >
+            <Phone size={14} />
+            #8891
+          </a>
         </div>
+        <button
+          onClick={() => window.location.replace(SAFE_URL)}
+          className="flex items-center gap-1.5 border-2 border-red-300 text-red-400 bg-red-50 px-3 py-2 rounded-xl text-sm font-bold transition-colors hover:bg-red-100"
+        >
+          <X size={14} />
+          すぐ閉じる
+        </button>
       </header>
 
-      {/* メインチャットエリア */}
+      {/* Sub-header: anonymous mode + timer */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-[var(--color-bg-primary)] border-b border-[var(--color-border)]">
+        <div className="flex items-center gap-1.5 bg-white/70 border border-[var(--color-border)] rounded-full px-3 py-1 text-xs text-[var(--color-text-secondary)]">
+          <span>🕵️</span>
+          <span className="font-medium">匿名モード</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+        </div>
+        <div
+          className={`flex items-center gap-1 text-xs font-mono ${
+            timerWarning ? 'text-[var(--color-danger)] font-bold animate-pulse' : 'text-[var(--color-text-muted)]'
+          }`}
+        >
+          <span>⏱</span>
+          <span>
+            残り {timerMin}分{timerSec.toString().padStart(2, '0')}秒
+          </span>
+        </div>
+      </div>
+
+      {/* Chat area */}
       <main className="flex-1 overflow-y-auto px-4 py-4 min-h-0">
-        <div className="max-w-2xl mx-auto space-y-4 pb-2">
+        <div className="max-w-2xl mx-auto space-y-3 pb-2">
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} />
+            <MessageBubble
+              key={i}
+              message={msg}
+              onSimplify={() => handleSend('もう少し簡単に説明してもらえますか？')}
+            />
           ))}
 
           {loading && (
-            <div className="flex justify-start">
-              <div className="bg-[var(--color-bubble-ai)] rounded-2xl rounded-tl-sm px-4 py-3 max-w-xs">
+            <div className="flex items-end gap-2 justify-start">
+              <div className="w-7 h-7 rounded-full bg-[var(--color-accent-light)] flex items-center justify-center flex-shrink-0">
+                <HeartHandshake size={14} className="text-[var(--color-accent-dark)]" />
+              </div>
+              <div className="bg-[var(--color-bubble-ai)] rounded-2xl rounded-tl-sm px-4 py-3">
                 <TypingIndicator />
               </div>
             </div>
@@ -117,116 +214,150 @@ export function ChatLayout() {
         </div>
       </main>
 
-      {/* 下部：常駐ボタン群 + 入力欄 */}
-      <footer className="flex-shrink-0 bg-[var(--color-bg-card)] border-t border-[var(--color-border)] px-4 pt-3 pb-4 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
-        <div className="max-w-2xl mx-auto space-y-2">
-          {/* クイック返信候補（プレースホルダー） */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {['話を聴いてほしい', '今、安全です', '助けてほしい'].map((label) => (
-              <button
-                key={label}
-                onClick={() => {
-                  setInput(label)
-                  textareaRef.current?.focus()
-                }}
-                className="
-                  flex-shrink-0 text-xs
-                  border border-[var(--color-border)] hover:border-[var(--color-accent)]
-                  text-[var(--color-text-secondary)] hover:text-[var(--color-accent-dark)]
-                  bg-transparent hover:bg-[var(--color-accent-light)]
-                  px-3 py-1.5 rounded-full transition-colors
-                "
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* テキスト入力 */}
+      {/* Footer */}
+      <footer className="flex-shrink-0 bg-[var(--color-bg-card)] border-t border-[var(--color-border)] px-4 pt-3 pb-4">
+        <div className="max-w-2xl mx-auto space-y-3">
+          {/* Input row */}
           <div className="flex items-end gap-2">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="メッセージを入力してください... (Enter で送信)"
-              rows={1}
-              className="
-                flex-1 resize-none
-                bg-[var(--color-bg-secondary)] border border-[var(--color-border)]
-                focus:border-[var(--color-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]
-                rounded-xl px-4 py-3 text-sm text-[var(--color-text-primary)]
-                placeholder:text-[var(--color-text-muted)]
-                transition-colors max-h-36 leading-relaxed
-              "
-              style={{
-                height: 'auto',
-                minHeight: '48px',
-              }}
-              onInput={(e) => {
-                const el = e.currentTarget
-                el.style.height = 'auto'
-                el.style.height = `${Math.min(el.scrollHeight, 144)}px`
-              }}
-            />
+            <div className="flex-1 flex items-end bg-[var(--color-bg-secondary)] border border-[var(--color-border)] focus-within:border-[var(--color-accent)] focus-within:ring-1 focus-within:ring-[var(--color-accent)] rounded-xl transition-colors">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="メッセージを入力してください..."
+                rows={1}
+                className="flex-1 resize-none bg-transparent px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none max-h-36 leading-relaxed"
+                style={{ minHeight: '48px', height: 'auto' }}
+                onInput={(e) => {
+                  const el = e.currentTarget
+                  el.style.height = 'auto'
+                  el.style.height = `${Math.min(el.scrollHeight, 144)}px`
+                }}
+              />
+              <button className="p-3 text-[var(--color-accent)]" aria-label="音声入力（未実装）">
+                <Mic size={18} />
+              </button>
+            </div>
             <button
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!input.trim() || loading}
               aria-label="送信"
-              className="
-                flex-shrink-0 w-12 h-12
-                bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)]
-                disabled:bg-[var(--color-border)] disabled:cursor-not-allowed
-                text-white rounded-xl shadow-sm
-                flex items-center justify-center
-                transition-colors duration-150
-              "
+              className="flex-shrink-0 w-12 h-12 bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] disabled:bg-[var(--color-border)] disabled:cursor-not-allowed text-white rounded-xl shadow-sm flex items-center justify-center transition-colors"
             >
               <Send size={18} />
             </button>
           </div>
 
-          {/* 注意書き */}
-          <p className="text-center text-[10px] text-[var(--color-text-muted)]">
-            緊急の場合は
-            <a href="tel:110" className="underline mx-1">警察 110</a>
-            /
-            <a href="tel:119" className="underline mx-1">救急 119</a>
-            /
-            <a href="tel:#8008" className="underline mx-1">DVホットライン #8008</a>
-            へ
-          </p>
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <FooterActionButton
+              emoji="📁"
+              label="カテゴリを選ぶ"
+              sub="相談内容から選択"
+              onClick={onOpenCategories}
+              colorClass="bg-amber-50 border-amber-200 text-amber-800"
+            />
+            <FooterActionButton
+              emoji="✅"
+              label="DVチェックリスト"
+              sub="状況を確認してみる"
+              onClick={() => handleComingSoon('DVチェックリスト')}
+              colorClass="bg-teal-50 border-teal-200 text-teal-800"
+            />
+            <FooterActionButton
+              emoji="📍"
+              label="相談窓口を探す"
+              sub="支援先を見つける"
+              onClick={() => {}}
+              colorClass="bg-rose-50 border-rose-200 text-rose-800"
+            />
+          </div>
         </div>
       </footer>
-
-      {/* 右下のQuick Exitのスペース確保 */}
-      <div className="h-20" aria-hidden />
     </div>
   )
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({
+  message,
+  onSimplify,
+}: {
+  message: DisplayMessage
+  onSimplify: () => void
+}) {
   const isUser = message.role === 'user'
+  const timeStr = message.timestamp.toLocaleTimeString('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  const isLong = message.content.length > 80
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-[var(--color-accent-light)] flex items-center justify-center flex-shrink-0 mt-auto mb-1 mr-2">
-          <HeartHandshake size={14} className="text-[var(--color-accent-dark)]" />
+    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex items-end gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        {!isUser && (
+          <div className="w-7 h-7 rounded-full bg-[var(--color-accent-light)] flex items-center justify-center flex-shrink-0">
+            <HeartHandshake size={14} className="text-[var(--color-accent-dark)]" />
+          </div>
+        )}
+        <div
+          className={`
+            max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap
+            ${isUser
+              ? 'bg-[var(--color-bubble-user)] text-[var(--color-text-primary)] rounded-tr-sm'
+              : 'bg-[var(--color-bubble-ai)] text-[var(--color-text-primary)] rounded-tl-sm'
+            }
+          `}
+        >
+          {message.content}
+          {!isUser && isLong && (
+            <button
+              onClick={onSimplify}
+              className="mt-2 flex items-center gap-1 text-xs text-[var(--color-accent)] border border-[var(--color-accent)]/50 rounded-full px-3 py-1 hover:bg-[var(--color-accent-light)] transition-colors"
+            >
+              <BookOpen size={11} />
+              簡単に言うと？
+            </button>
+          )}
         </div>
-      )}
-      <div
-        className={`
-          max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap
-          ${isUser
-            ? 'bg-[var(--color-bubble-user)] text-[var(--color-text-primary)] rounded-tr-sm'
-            : 'bg-[var(--color-bubble-ai)] text-[var(--color-text-primary)] rounded-tl-sm'
-          }
-        `}
-      >
-        {message.content}
+      </div>
+
+      {/* Timestamp + read receipt */}
+      <div className={`flex items-center gap-1 mt-1 px-1 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        <span className="text-[10px] text-[var(--color-text-muted)]">{timeStr}</span>
+        {isUser && message.read && (
+          <span className="text-[10px] text-blue-400">✓✓</span>
+        )}
       </div>
     </div>
+  )
+}
+
+function FooterActionButton({
+  emoji,
+  label,
+  sub,
+  onClick,
+  colorClass,
+}: {
+  emoji: string
+  label: string
+  sub: string
+  onClick: () => void
+  colorClass: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 border rounded-xl px-2 py-2 text-left transition-opacity hover:opacity-75 ${colorClass}`}
+    >
+      <div className="flex items-center gap-1 mb-0.5">
+        <span className="text-sm leading-none">{emoji}</span>
+        <span className="text-[11px] font-bold leading-tight">{label}</span>
+      </div>
+      <p className="text-[9px] opacity-60 leading-tight pl-5">{sub}</p>
+    </button>
   )
 }
 
