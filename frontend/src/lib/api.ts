@@ -1,5 +1,3 @@
-import { HTTP_STATUS_CODE } from '@/types/http_status_code'
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 export type ChatMessage = {
@@ -11,34 +9,12 @@ export async function sendMessage(
   message: string,
   sessionId?: string,
 ): Promise<{ reply: string; session_id: string }> {
-  // const res = await fetch(`${API_BASE}/api/v1/chat`, {
-  
-  const res = await fetch(`${API_BASE}/api/v1/sessions`, {
+  const res = await fetch(`${API_BASE}/api/v1/chat`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, session_id: sessionId }),
   })
-  if (res.status !== HTTP_STATUS_CODE.OK) {
-    throw new Error(`API error: ${res.status}`)
-  }
-  // if (!res.ok) {
-  //   throw new Error(`API error: ${res.status}`)
-  // }
-  if (res?.body?.token) {
-    sessionStorage.setItem('token', res?.body?.token);
-  }
 
-  const res = await fetch(`${API_BASE}/api/v1/messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'token': `${sessionStorage.getItem('token')}`,
-    },
-    body: JSON.stringify({
-      message,
-    }),
-  })
   if (!res.ok) {
     throw new Error(`API error: ${res.status}`)
   }
