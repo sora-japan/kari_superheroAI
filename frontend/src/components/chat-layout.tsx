@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Phone, X, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '@/lib/api'
+import { getOrCreateSessionId } from '@/lib/session'
 
 const SAFE_URL = 'https://www.google.com/search?q=天気'
 const SESSION_SECONDS = 5 * 60
@@ -28,7 +29,6 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
   const [messages, setMessages] = useState<DisplayMessage[]>([makeInitialMessage()])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sessionId, setSessionId] = useState<string | undefined>()
   const [secondsLeft, setSecondsLeft] = useState(SESSION_SECONDS)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -61,9 +61,9 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
     setMessages((prev) => [...prev, { role: 'user', content, timestamp: new Date() }])
     setLoading(true)
 
-    sendMessage(content, undefined)
+    const sid = getOrCreateSessionId()
+    sendMessage(content, sid)
       .then((data) => {
-        setSessionId(data.session_id)
         setMessages((prev) => [
           ...prev.slice(0, -1),
           { ...prev[prev.length - 1], read: true } as DisplayMessage,
@@ -94,8 +94,8 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
       setSecondsLeft(SESSION_SECONDS) // reset timer on activity
 
       try {
-        const data = await sendMessage(content, sessionId)
-        setSessionId(data.session_id)
+        const sid = getOrCreateSessionId()
+        const data = await sendMessage(content, sid)
         setMessages((prev) => [
           ...prev.slice(0, -1),
           { ...prev[prev.length - 1], read: true } as DisplayMessage,
@@ -115,7 +115,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
         textareaRef.current?.focus()
       }
     },
-    [input, loading, sessionId],
+    [input, loading],
   )
 
   const handleComingSoon = (label: string) => {
