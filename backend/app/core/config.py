@@ -10,6 +10,7 @@ class Settings(BaseSettings):
         "http://localhost:8000",
         "http://127.0.0.1:8000",
     ]
+    google_api_key: str = ""
 
     class Config:
         env_file = ".env"

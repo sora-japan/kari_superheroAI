@@ -27,7 +27,7 @@ services:
     environment:
       - DEBUG=${DEBUG:-true}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-["http://localhost:3000","http://127.0.0.1:3000","http://localhost:8000","http://127.0.0.1:8000"]}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     volumes:
       - ./backend:/app
     networks:
