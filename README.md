@@ -60,6 +60,24 @@ DV（ドメスティック・バイオレンス）被害者が安心して相談
 - Docker & Docker Compose
 - または Node.js 20+ / Python 3.12+
 
+## 開発フロー
+
+新しく機能を作る際には、developブランチから切って個人のブランチを作ってください
+
+(例)
+
+```
+git checkout develop
+git checkout -b feature/sample
+```
+
+修正完了したらdevelopブランチに向けてプルリクを作ってください
+完了したらdevelopからmainに向けてプルリクを作って反映してください
+
+```
+main <- develop <- 作業ブランチ
+```
+
 ### 環境変数の設定
 
 ```bash
