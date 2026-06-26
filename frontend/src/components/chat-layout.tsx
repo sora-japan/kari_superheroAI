@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Phone, X, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '@/lib/api'
-import { getOrCreateSessionId } from '@/lib/session'
+import { getSessionId, storeSessionId } from '@/lib/session'
 
 const SAFE_URL = 'https://www.google.com/search?q=天気'
 const SESSION_SECONDS = 5 * 60
@@ -61,9 +61,9 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
     setMessages((prev) => [...prev, { role: 'user', content, timestamp: new Date() }])
     setLoading(true)
 
-    const sid = getOrCreateSessionId()
-    sendMessage(content, sid)
+    sendMessage(content, getSessionId())
       .then((data) => {
+        storeSessionId(data.session_id)
         setMessages((prev) => [
           ...prev.slice(0, -1),
           { ...prev[prev.length - 1], read: true } as DisplayMessage,
@@ -94,8 +94,8 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
       setSecondsLeft(SESSION_SECONDS) // reset timer on activity
 
       try {
-        const sid = getOrCreateSessionId()
-        const data = await sendMessage(content, sid)
+        const data = await sendMessage(content, getSessionId())
+        storeSessionId(data.session_id)
         setMessages((prev) => [
           ...prev.slice(0, -1),
           { ...prev[prev.length - 1], read: true } as DisplayMessage,

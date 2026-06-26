@@ -7,7 +7,7 @@ export type ChatMessage = {
 
 export async function sendMessage(
   message: string,
-  sessionId?: string,
+  sessionId: string | null,
 ): Promise<{ reply: string; session_id: string }> {
   const res = await fetch(`${API_BASE}/api/v1/chat`, {
     method: 'POST',
