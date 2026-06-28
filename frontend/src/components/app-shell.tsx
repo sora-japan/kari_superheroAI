@@ -30,10 +30,6 @@ export function AppShell() {
 
     setIdleSecondsLeft(PRE_CHAT_IDLE_SECONDS)
 
-    const reset = () => setIdleSecondsLeft(PRE_CHAT_IDLE_SECONDS)
-    const events = ['mousemove', 'click', 'keydown', 'touchstart'] as const
-    events.forEach((e) => window.addEventListener(e, reset))
-
     const interval = setInterval(() => {
       setIdleSecondsLeft((prev) => {
         if (prev <= 1) {
@@ -46,7 +42,6 @@ export function AppShell() {
 
     return () => {
       clearInterval(interval)
-      events.forEach((e) => window.removeEventListener(e, reset))
     }
   }, [screen])
 
