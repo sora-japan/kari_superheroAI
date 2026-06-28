@@ -19,9 +19,10 @@ const CATEGORIES: { emoji: string; label: string; comingSoon?: boolean }[] = [
 interface Props {
   onOpenCategories: () => void
   onStartChat: (message?: string) => void
+  idleSecondsLeft: number
 }
 
-export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat }: Props) {
+export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat, idleSecondsLeft }: Props) {
   const [input, setInput] = useState('')
   const [showComingSoon, setShowComingSoon] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -65,12 +66,16 @@ export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat
         </button>
       </div>
 
-      {/* Anonymous badge */}
-      <div className="flex justify-center py-1 flex-shrink-0">
+      {/* Anonymous badge + idle timer */}
+      <div className="flex items-center justify-between px-4 py-1 flex-shrink-0">
         <div className="flex items-center gap-1.5 bg-white/70 border border-[var(--color-border)] rounded-full px-3 py-1 text-xs text-[var(--color-text-secondary)] shadow-sm">
           <span>🕵️</span>
           <span className="font-medium">匿名モード</span>
           <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+        </div>
+        <div className={`flex items-center gap-1 text-xs font-mono ${idleSecondsLeft <= 60 ? 'text-[var(--color-danger)] font-bold animate-pulse' : 'text-[var(--color-text-muted)]'}`}>
+          <span>⏱</span>
+          <span>残り {Math.floor(idleSecondsLeft / 60)}分{String(idleSecondsLeft % 60).padStart(2, '0')}秒</span>
         </div>
       </div>
 
