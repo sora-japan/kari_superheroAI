@@ -19,9 +19,10 @@ const CATEGORIES = [
 interface Props {
   onBack: () => void
   onStartChat: (message?: string) => void
+  idleSecondsLeft: number
 }
 
-export function CategoryScreen({ onBack, onStartChat }: Props) {
+export function CategoryScreen({ onBack, onStartChat, idleSecondsLeft }: Props) {
   const [input, setInput] = useState('')
 
   const handleSelect = (label: string) => {
@@ -57,8 +58,8 @@ export function CategoryScreen({ onBack, onStartChat }: Props) {
         </button>
       </div>
 
-      {/* Title */}
-      <div className="text-center px-4 pb-3 flex-shrink-0">
+      {/* Title + idle timer */}
+      <div className="text-center px-4 pb-3 flex-shrink-0 relative">
         <h1 className="text-xl font-bold text-[var(--color-text-primary)] flex items-center justify-center gap-2">
           <span>🌿</span>
           よくある相談
@@ -67,6 +68,10 @@ export function CategoryScreen({ onBack, onStartChat }: Props) {
         <p className="text-xs text-[var(--color-text-secondary)] mt-1">
           気になることを選ぶか、メッセージを入力してください
         </p>
+        <div className={`mt-1 flex items-center justify-center gap-1 text-xs font-mono ${idleSecondsLeft <= 60 ? 'text-[var(--color-danger)] font-bold animate-pulse' : 'text-[var(--color-text-muted)]'}`}>
+          <span>⏱</span>
+          <span>残り {Math.floor(idleSecondsLeft / 60)}分{String(idleSecondsLeft % 60).padStart(2, '0')}秒</span>
+        </div>
       </div>
 
       {/* Scrollable content */}

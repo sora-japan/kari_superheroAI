@@ -6,11 +6,15 @@ import { WelcomeScreen } from '@/components/welcome-screen'
 import { CategoryScreen } from '@/components/category-screen'
 import { ChatLayout } from '@/components/chat-layout'
 
+const SAFE_URL = 'https://www.google.com/search?q=天気'
+const PRE_CHAT_IDLE_SECONDS = 10 * 60
+
 type Screen = 'welcome' | 'category' | 'chat'
 
 export function AppShell() {
   const [screen, setScreen] = useState<Screen>('welcome')
   const [initialMessage, setInitialMessage] = useState<string | undefined>()
+  const [idleSecondsLeft, setIdleSecondsLeft] = useState(PRE_CHAT_IDLE_SECONDS)
 
   // Prevent back-navigation to reveal this site
   useEffect(() => {
@@ -20,6 +24,27 @@ export function AppShell() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
+  // Inactivity countdown on pre-chat screens
+  useEffect(() => {
+    if (screen === 'chat') return
+
+    setIdleSecondsLeft(PRE_CHAT_IDLE_SECONDS)
+
+    const interval = setInterval(() => {
+      setIdleSecondsLeft((prev) => {
+        if (prev <= 1) {
+          window.location.replace(SAFE_URL)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [screen])
+
   const goToChat = (message?: string) => {
     setInitialMessage(message)
     setScreen('chat')
@@ -27,17 +52,19 @@ export function AppShell() {
 
   return (
     <div className="h-full flex flex-col">
-      <SafetyModal />
+      <SafetyModal idleSecondsLeft={idleSecondsLeft} />
       {screen === 'welcome' && (
         <WelcomeScreen
           onOpenCategories={() => setScreen('category')}
           onStartChat={goToChat}
+          idleSecondsLeft={idleSecondsLeft}
         />
       )}
       {screen === 'category' && (
         <CategoryScreen
           onBack={() => setScreen('welcome')}
           onStartChat={goToChat}
+          idleSecondsLeft={idleSecondsLeft}
         />
       )}
       {screen === 'chat' && (

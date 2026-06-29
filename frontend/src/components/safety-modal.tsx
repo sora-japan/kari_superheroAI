@@ -6,7 +6,7 @@ import { ShieldCheck, X } from 'lucide-react'
 
 const STORAGE_KEY = 'kari_safety_acknowledged'
 
-export function SafetyModal() {
+export function SafetyModal({ idleSecondsLeft }: { idleSecondsLeft: number }) {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -38,13 +38,19 @@ export function SafetyModal() {
           onEscapeKeyDown={(e) => e.preventDefault()}
           onPointerDownOutside={(e) => e.preventDefault()}
         >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-[var(--color-accent-light)] rounded-full p-2">
-              <ShieldCheck size={22} className="text-[var(--color-accent-dark)]" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-[var(--color-accent-light)] rounded-full p-2">
+                <ShieldCheck size={22} className="text-[var(--color-accent-dark)]" />
+              </div>
+              <Dialog.Title className="text-lg font-bold text-[var(--color-text-primary)]">
+                安全にご利用いただくために
+              </Dialog.Title>
             </div>
-            <Dialog.Title className="text-lg font-bold text-[var(--color-text-primary)]">
-              安全にご利用いただくために
-            </Dialog.Title>
+            <div className={`flex items-center gap-1 text-xs font-mono ${idleSecondsLeft <= 60 ? 'text-[var(--color-danger)] font-bold animate-pulse' : 'text-[var(--color-text-muted)]'}`}>
+              <span>⏱</span>
+              <span>残り {Math.floor(idleSecondsLeft / 60)}分{String(idleSecondsLeft % 60).padStart(2, '0')}秒</span>
+            </div>
           </div>
 
           <Dialog.Description asChild>

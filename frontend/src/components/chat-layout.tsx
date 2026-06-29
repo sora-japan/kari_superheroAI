@@ -6,7 +6,7 @@ import { sendMessage, type ChatMessage } from '@/lib/api'
 import { getSessionId, storeSessionId } from '@/lib/session'
 
 const SAFE_URL = 'https://www.google.com/search?q=天気'
-const SESSION_SECONDS = 5 * 60
+const SESSION_SECONDS = 10 * 60
 
 type DisplayMessage = ChatMessage & {
   timestamp: Date
