@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Phone, X, HeartHandshake } from 'lucide-react'
+import { ChecklistModal } from './checklist-modal'
 
 const SAFE_URL = 'https://www.google.com/search?q=天気'
 
@@ -24,6 +25,7 @@ interface Props {
 
 export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat, idleSecondsLeft }: Props) {
   const [input, setInput] = useState('')
+  const [showChecklist, setShowChecklist] = useState(false)
   const [showComingSoon, setShowComingSoon] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -37,8 +39,21 @@ export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat
     setTimeout(() => setShowComingSoon(false), 2500)
   }
 
+  const handleChecklistSubmit = (checkedItems: string[]) => {
+    const message =
+    'DVチェックリストで以下の項目に当てはまりました:\n\n' +
+    checkedItems.map((item) => `・${item}`).join('\n')
+    handleStart(message)
+  }
+
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-primary)] overflow-hidden">
+      {showChecklist && (
+        <ChecklistModal
+        onClose={() => setShowChecklist(false)}
+        onSubmit={handleChecklistSubmit}
+        />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 flex-shrink-0">
         <div className="flex gap-2">
@@ -138,12 +153,11 @@ export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat
             ))}
             {/* DVチェックリスト: same gray chip style */}
             <button
-              onClick={handleComingSoon}
-              className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-full bg-gray-100 text-gray-400 font-medium"
+              onClick={() => setShowChecklist(true)}
+              className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-full bg-[var(--color-accent-light)]/70 text-[var(--color-accent-dark)] font-medium"
             >
               <span>✅</span>
               <span>DVチェックリスト</span>
-              <span className="text-[9px] bg-amber-100 text-amber-700 px-1 rounded">予定</span>
             </button>
           </div>
         </div>

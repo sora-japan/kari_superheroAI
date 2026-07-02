@@ -7,7 +7,7 @@ import { CategoryScreen } from '@/components/category-screen'
 import { ChatLayout } from '@/components/chat-layout'
 
 const SAFE_URL = 'https://www.google.com/search?q=天気'
-const PRE_CHAT_IDLE_SECONDS = 10 * 60
+const PRE_CHAT_IDLE_SECONDS = 15 * 60
 
 type Screen = 'welcome' | 'category' | 'chat'
 
