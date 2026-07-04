@@ -1,17 +1,7 @@
 'use client'
 
 import { X } from 'lucide-react'
-
-const CATEGORIES = [
-  { emoji: '💰', label: '生活費を\n渡してもらえない' },
-  { emoji: '📱', label: 'スマホを\nチェックされる' },
-  { emoji: '😡', label: '怒鳴られることが\n多い' },
-  { emoji: '🚪', label: '外出を\n制限される' },
-  { emoji: '❓', label: 'これって\nDV？' },
-  { emoji: '🆘', label: '今すぐ\n逃げたい' },
-  { emoji: '📸', label: '証拠の\n残し方' },
-  { emoji: '👧', label: '子どもへの\n影響' },
-]
+import { CATEGORIES } from '@/lib/constants'
 
 interface Props {
   onClose: () => void
@@ -35,7 +25,7 @@ export function CategoryModal({ onClose, onSelect }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
           <div>
-            <h2 className="text-base font-bold text-[var(--color-text-primary)]">📁 カテゴリーを選ぶ</h2>
+            <h2 className="text-base font-bold text-[var(--color-text-primary)]">📁 よくある相談</h2>
             <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
               気になることを選んでください
             </p>
