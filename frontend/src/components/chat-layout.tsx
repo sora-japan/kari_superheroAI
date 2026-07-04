@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Phone, X, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
-import { sendMessage, type ChatMessage } from '@/lib/api'
+import { sendChatMessages, type ChatMessage } from '@/lib/api'
 import { getSessionId, storeSessionId } from '@/lib/session'
 import { ChecklistModal } from './checklist-modal'
 import { CategoryModal } from './category-modal'
@@ -45,23 +45,27 @@ export function ChatLayout() {
   }, [])
 
   const handleSend = useCallback(
-    async (overrideText?: string) => {
-      const content = overrideText ?? input.trim()
-      if (!content || loading) return
+    async (params?: { message?: string; category?: string; quickReply?: string }) => {
+      const message = params ? params.message : input.trim()
+      const category = params?.category
+      const quickReply = params?.quickReply
+      const displayContent = message || category || quickReply || ''
+      if (!displayContent || loading) return
 
-      if (!overrideText) setInput('')
+      if (!params) setInput('')
       setStarted(true)
-      setMessages((prev) => [...prev, { role: 'user', content, timestamp: new Date() }])
+      setMessages((prev) => [...prev, { role: 'user', content: displayContent, timestamp: new Date() }])
       setLoading(true)
       setSecondsLeft(QUICK_EXIT_SECONDS) // reset timer on activity
 
       try {
-        const data = await sendMessage(content, getSessionId())
+        const data = await sendChatMessages({ message, category, quickReply }, getSessionId())
         storeSessionId(data.session_id)
+        const aiReply = data.messages.find((m) => m.role === 'ai')?.message ?? ''
         setMessages((prev) => [
           ...prev.slice(0, -1),
           { ...prev[prev.length - 1], read: true } as DisplayMessage,
-          { role: 'assistant', content: data.reply, timestamp: new Date() },
+          { role: 'assistant', content: aiReply, timestamp: new Date() },
         ])
       } catch {
         setMessages((prev) => [
@@ -84,12 +88,12 @@ export function ChatLayout() {
     const message =
       `DVチェックリストで以下の項目に当てはまりました：\n\n` +
       checkedItems.map((item) => `・${item}`).join('\n')
-    handleSend(message)
+    handleSend({ message })
   }
 
   const handleCategorySelect = (label: string) => {
     setShowCategoryModal(false)
-    handleSend(label)
+    handleSend({ category: label })
   }
 
   const handleIdleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -242,7 +246,7 @@ export function ChatLayout() {
                 <MessageBubble
                   key={i}
                   message={msg}
-                  onSimplify={() => handleSend('もう少し簡単に説明してもらえますか？')}
+                  onSimplify={() => handleSend({ message: 'もう少し簡単に説明してもらえますか？' })}
                 />
               ))}
 
