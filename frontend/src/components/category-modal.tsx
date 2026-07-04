@@ -25,7 +25,7 @@ export function CategoryModal({ onClose, onSelect }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
           <div>
-            <h2 className="text-base font-bold text-[var(--color-text-primary)]">📁 カテゴリーを選ぶ</h2>
+            <h2 className="text-base font-bold text-[var(--color-text-primary)]">📁 よくある相談</h2>
             <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
               気になることを選んでください
             </p>
