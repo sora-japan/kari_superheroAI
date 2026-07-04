@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { ShieldCheck, X } from 'lucide-react'
-
-const STORAGE_KEY = 'kari_safety_acknowledged'
+import { STORAGE_KEY } from '@/lib/constants'
 
 export function SafetyModal({ idleSecondsLeft }: { idleSecondsLeft: number }) {
   const [open, setOpen] = useState(false)
