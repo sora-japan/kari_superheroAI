@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import { SafetyModal } from '@/components/safety-modal'
 import { WelcomeScreen } from '@/components/welcome-screen'
-import { CategoryScreen } from '@/components/category-screen'
 import { ChatLayout } from '@/components/chat-layout'
 
 const SAFE_URL = 'https://www.google.com/search?q=天気'
 const PRE_CHAT_IDLE_SECONDS = 15 * 60
 
-type Screen = 'welcome' | 'category' | 'chat'
+type Screen = 'welcome' | 'chat'
 
 export function AppShell() {
   const [screen, setScreen] = useState<Screen>('welcome')
@@ -55,23 +54,12 @@ export function AppShell() {
       <SafetyModal idleSecondsLeft={idleSecondsLeft} />
       {screen === 'welcome' && (
         <WelcomeScreen
-          onOpenCategories={() => setScreen('category')}
-          onStartChat={goToChat}
-          idleSecondsLeft={idleSecondsLeft}
-        />
-      )}
-      {screen === 'category' && (
-        <CategoryScreen
-          onBack={() => setScreen('welcome')}
           onStartChat={goToChat}
           idleSecondsLeft={idleSecondsLeft}
         />
       )}
       {screen === 'chat' && (
-        <ChatLayout
-          initialMessage={initialMessage}
-          onOpenCategories={() => setScreen('category')}
-        />
+        <ChatLayout initialMessage={initialMessage} />
       )}
     </div>
   )
