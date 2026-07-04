@@ -3,28 +3,23 @@
 import { useState, useRef } from 'react'
 import { Phone, X, HeartHandshake } from 'lucide-react'
 import { ChecklistModal } from './checklist-modal'
+import { CategoryModal } from './category-modal'
 import { SAFE_URL, CATEGORIES } from '@/lib/constants'
 
 interface Props {
-  onOpenCategories: () => void
   onStartChat: (message?: string) => void
   idleSecondsLeft: number
 }
 
-export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat, idleSecondsLeft }: Props) {
+export function WelcomeScreen({ onStartChat, idleSecondsLeft }: Props) {
   const [input, setInput] = useState('')
   const [showChecklist, setShowChecklist] = useState(false)
-  const [showComingSoon, setShowComingSoon] = useState(false)
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleStart = (message?: string) => {
     const msg = message ?? input.trim()
     onStartChat(msg || undefined)
-  }
-
-  const handleComingSoon = () => {
-    setShowComingSoon(true)
-    setTimeout(() => setShowComingSoon(false), 2500)
   }
 
   const handleChecklistSubmit = (checkedItems: string[]) => {
@@ -34,12 +29,23 @@ export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat
     handleStart(message)
   }
 
+  const handleCategorySelect = (label: string) => {
+    setShowCategoryModal(false)
+    handleStart(label)
+  }
+
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-primary)] overflow-hidden">
       {showChecklist && (
         <ChecklistModal
         onClose={() => setShowChecklist(false)}
         onSubmit={handleChecklistSubmit}
+        />
+      )}
+      {showCategoryModal && (
+        <CategoryModal
+          onClose={() => setShowCategoryModal(false)}
+          onSelect={handleCategorySelect}
         />
       )}
       {/* Header */}
@@ -122,24 +128,14 @@ export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat
             <span>🌿</span>よくある相談
           </h2>
           <div className="flex gap-2 flex-wrap justify-center">
-            {CATEGORIES.map(({ emoji, label, comingSoon }) => (
-              <button
-                key={label}
-                onClick={() => comingSoon ? handleComingSoon() : handleStart(label)}
-                className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-full transition-colors font-medium ${
-                  comingSoon
-                    ? 'bg-gray-100 text-gray-400'
-                    : 'bg-[var(--color-accent-light)] hover:bg-[var(--color-accent-light)]/70 text-[var(--color-accent-dark)]'
-                }`}
-              >
-                <span>{emoji}</span>
-                <span>{label}</span>
-                {comingSoon && (
-                  <span className="text-[9px] bg-amber-100 text-amber-700 px-1 rounded">予定</span>
-                )}
-              </button>
-            ))}
-            {/* DVチェックリスト: same gray chip style */}
+            <button
+              onClick={() => setShowCategoryModal(true)}
+              className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-full bg-[var(--color-accent-light)] hover:bg-[var(--color-accent-light)]/70 text-[var(--color-accent-dark)] font-medium"
+            >
+              <span>📁</span>
+              <span>カテゴリーを選ぶ</span>
+            </button>
+            {/* DVチェックリスト: same chip style */}
             <button
               onClick={() => setShowChecklist(true)}
               className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-full bg-[var(--color-accent-light)]/70 text-[var(--color-accent-dark)] font-medium"
@@ -162,13 +158,6 @@ export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat
         </div>
 
       </div>
-
-      {/* Coming soon toast */}
-      {showComingSoon && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl px-4 py-2 text-sm shadow-lg text-[var(--color-text-secondary)] whitespace-nowrap z-50">
-          この機能は現在実装予定です
-        </div>
-      )}
     </div>
   )
 }

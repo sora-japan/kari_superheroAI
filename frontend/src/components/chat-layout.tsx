@@ -5,6 +5,7 @@ import { Phone, X, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '@/lib/api'
 import { getSessionId, storeSessionId } from '@/lib/session'
 import { ChecklistModal } from './checklist-modal'
+import { CategoryModal } from './category-modal'
 import { SAFE_URL, QUICK_EXIT_SECONDS, EMERGENCY_CONTACTS } from '@/lib/constants'
 
 type DisplayMessage = ChatMessage & {
@@ -21,15 +22,15 @@ const makeInitialMessage = (): DisplayMessage => ({
 
 interface Props {
   initialMessage?: string
-  onOpenCategories: () => void
 }
 
-export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
+export function ChatLayout({ initialMessage }: Props) {
   const [messages, setMessages] = useState<DisplayMessage[]>([makeInitialMessage()])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(QUICK_EXIT_SECONDS)
   const [showChecklist, setShowChecklist] = useState(false)
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const initialSentRef = useRef(false)
@@ -125,6 +126,11 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
     handleSend(message)
   }
 
+  const handleCategorySelect = (label: string) => {
+    setShowCategoryModal(false)
+    handleSend(label)
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -142,6 +148,12 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
         <ChecklistModal
           onClose={() => setShowChecklist(false)}
           onSubmit={handleChecklistSubmit}
+        />
+      )}
+      {showCategoryModal && (
+        <CategoryModal
+          onClose={() => setShowCategoryModal(false)}
+          onSelect={handleCategorySelect}
         />
       )}
       {/* Header - welcome screen と統一 */}
@@ -257,7 +269,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
               emoji="📁"
               label="カテゴリを選ぶ"
               sub="相談内容から選択"
-              onClick={onOpenCategories}
+              onClick={() => {setShowCategoryModal(true);setSecondsLeft(SESSION_SECONDS)}}
               colorClass="bg-amber-50 border-amber-200 text-amber-800"
             />
             <FooterActionButton
