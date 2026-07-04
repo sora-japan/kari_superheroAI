@@ -4,9 +4,11 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Phone, X, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '@/lib/api'
 import { getSessionId, storeSessionId } from '@/lib/session'
+import { ChecklistModal } from './checklist-modal'
+
 
 const SAFE_URL = 'https://www.google.com/search?q=天気'
-const SESSION_SECONDS = 10 * 60
+const SESSION_SECONDS = 15 * 60
 
 type DisplayMessage = ChatMessage & {
   timestamp: Date
@@ -30,6 +32,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(SESSION_SECONDS)
+  const [showChecklist, setShowChecklist] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const initialSentRef = useRef(false)
@@ -118,15 +121,11 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
     [input, loading],
   )
 
-  const handleComingSoon = (label: string) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: 'assistant',
-        content: `「${label}」は現在実装予定の機能です。`,
-        timestamp: new Date(),
-      },
-    ])
+  const handleChecklistSubmit = (checkedItems: string[]) => {
+    const message =
+      `DVチェックリストで以下の項目に当てはまりました：\n\n` +
+      checkedItems.map((item) => `・${item}`).join('\n')
+    handleSend(message)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -142,6 +141,12 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
 
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg-primary)]">
+      {showChecklist && (
+        <ChecklistModal
+          onClose={() => setShowChecklist(false)}
+          onSubmit={handleChecklistSubmit}
+        />
+      )}
       {/* Header - welcome screen と統一 */}
       <header className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-[var(--color-border)]">
         <div className="flex gap-2">
@@ -262,7 +267,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
               emoji="✅"
               label="DVチェックリスト"
               sub="状況を確認してみる"
-              onClick={() => handleComingSoon('DVチェックリスト')}
+              onClick={() => {setShowChecklist(true);setSecondsLeft(SESSION_SECONDS)}}
               colorClass="bg-teal-50 border-teal-200 text-teal-800"
             />
             <FooterActionButton
