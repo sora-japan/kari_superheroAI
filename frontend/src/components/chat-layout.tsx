@@ -214,7 +214,7 @@ export function ChatLayout() {
                 className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-full bg-[var(--color-accent-light)] hover:bg-[var(--color-accent-light)]/70 text-[var(--color-accent-dark)] font-medium"
               >
                 <span>📁</span>
-                <span>カテゴリーを選ぶ</span>
+                <span>よくある相談</span>
               </button>
               <button
                 onClick={() => setShowChecklist(true)}
