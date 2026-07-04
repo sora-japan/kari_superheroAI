@@ -14,16 +14,9 @@ type DisplayMessage = ChatMessage & {
   read?: boolean
 }
 
-const makeInitialMessage = (): DisplayMessage => ({
-  role: 'assistant',
-  content:
-    'こんにちは。ここは、あなたの気持ちに寄り添う場所です。\nどんなことでも、一緒に整理していきましょう。\nまずは、今の状況を教えていただけますか？',
-  timestamp: new Date(),
-})
-
 export function ChatLayout() {
   const [started, setStarted] = useState(false)
-  const [messages, setMessages] = useState<DisplayMessage[]>([makeInitialMessage()])
+  const [messages, setMessages] = useState<DisplayMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [secondsLeft, setSecondsLeft] = useState(QUICK_EXIT_SECONDS)
@@ -212,9 +205,9 @@ export function ChatLayout() {
 
           {/* Bottom pane: よくある相談 scrollable */}
           <div className="flex-1 overflow-y-auto px-4 pb-2">
-            <h2 className="text-sm font-bold text-[var(--color-text-secondary)] mb-3 flex items-center gap-1.5">
+            {/* <h2 className="text-sm font-bold text-[var(--color-text-secondary)] mb-3 flex items-center gap-1.5">
               <span>🌿</span>よくある相談
-            </h2>
+            </h2> */}
             <div className="flex gap-2 flex-wrap justify-center">
               <button
                 onClick={() => setShowCategoryModal(true)}
@@ -238,17 +231,6 @@ export function ChatLayout() {
                 <span>相談窓口を探す</span>
               </button>
             </div>
-          </div>
-
-          {/* 個人情報リンク: 最下部に固定 */}
-          <div className="flex-shrink-0 py-3 text-center border-t border-[var(--color-border)]">
-            <a
-              href="#"
-              onClick={(e) => e.preventDefault()}
-              className="text-xs text-[var(--color-text-muted)] underline underline-offset-2"
-            >
-              個人情報取扱に係る利用目的
-            </a>
           </div>
         </div>
       ) : (
@@ -280,7 +262,7 @@ export function ChatLayout() {
           </main>
 
           {/* Footer */}
-          <footer className="flex-shrink-0 bg-[var(--color-bg-card)] border-t border-[var(--color-border)] px-4 pt-3 pb-4">
+          <footer className="flex-shrink-0 px-4 pt-3 pb-4">
             <div className="max-w-2xl mx-auto space-y-3">
               {/* Input row */}
               <div className="flex items-end gap-2">
@@ -342,6 +324,17 @@ export function ChatLayout() {
           </footer>
         </>
       )}
+
+      {/* 個人情報リンク: 最下部に固定 */}
+      <div className="flex-shrink-0 py-3 text-center border-t border-[var(--color-border)]">
+        <a
+          href="#"
+          onClick={(e) => e.preventDefault()}
+          className="text-xs text-[var(--color-text-muted)] underline underline-offset-2"
+        >
+          個人情報取扱に係る利用目的
+        </a>
+      </div>
     </div>
   )
 }
