@@ -1,17 +1,7 @@
 'use client'
 
 import { X } from 'lucide-react'
-
-const CATEGORIES = [
-  { emoji: '💰', label: '生活費を\n渡してもらえない' },
-  { emoji: '📱', label: 'スマホを\nチェックされる' },
-  { emoji: '😡', label: '怒鳴られることが\n多い' },
-  { emoji: '🚪', label: '外出を\n制限される' },
-  { emoji: '❓', label: 'これって\nDV？' },
-  { emoji: '🆘', label: '今すぐ\n逃げたい' },
-  { emoji: '📸', label: '証拠の\n残し方' },
-  { emoji: '👧', label: '子どもへの\n影響' },
-]
+import { CATEGORIES } from '@/lib/constants'
 
 interface Props {
   onClose: () => void
