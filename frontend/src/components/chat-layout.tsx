@@ -5,10 +5,7 @@ import { Phone, X, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '@/lib/api'
 import { getSessionId, storeSessionId } from '@/lib/session'
 import { ChecklistModal } from './checklist-modal'
-
-
-const SAFE_URL = 'https://www.google.com/search?q=天気'
-const SESSION_SECONDS = 15 * 60
+import { SAFE_URL, QUICK_EXIT_SECONDS, EMERGENCY_CONTACTS } from '@/lib/constants'
 
 type DisplayMessage = ChatMessage & {
   timestamp: Date
@@ -31,7 +28,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
   const [messages, setMessages] = useState<DisplayMessage[]>([makeInitialMessage()])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [secondsLeft, setSecondsLeft] = useState(SESSION_SECONDS)
+  const [secondsLeft, setSecondsLeft] = useState(QUICK_EXIT_SECONDS)
   const [showChecklist, setShowChecklist] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -94,7 +91,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
       if (!overrideText) setInput('')
       setMessages((prev) => [...prev, { role: 'user', content, timestamp: new Date() }])
       setLoading(true)
-      setSecondsLeft(SESSION_SECONDS) // reset timer on activity
+      setSecondsLeft(QUICK_EXIT_SECONDS) // reset timer on activity
 
       try {
         const data = await sendMessage(content, getSessionId())
@@ -151,18 +148,18 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
       <header className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-[var(--color-border)]">
         <div className="flex gap-2">
           <a
-            href="tel:110"
+            href={`${EMERGENCY_CONTACTS.police.tel}`}
             className="flex items-center gap-1.5 bg-[var(--color-danger)] text-white px-3 py-2 rounded-xl text-sm font-bold shadow-sm"
           >
             <Phone size={14} />
-            110
+            {EMERGENCY_CONTACTS.police.number}
           </a>
           <a
-            href="tel:#8891"
+            href={`${EMERGENCY_CONTACTS.oneStopSupport.tel}`}
             className="flex items-center gap-1.5 bg-[var(--color-danger)] text-white px-3 py-2 rounded-xl text-sm font-bold shadow-sm"
           >
             <Phone size={14} />
-            #8891
+            {EMERGENCY_CONTACTS.oneStopSupport.number}
           </a>
         </div>
         <button
@@ -267,7 +264,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
               emoji="✅"
               label="DVチェックリスト"
               sub="状況を確認してみる"
-              onClick={() => {setShowChecklist(true);setSecondsLeft(SESSION_SECONDS)}}
+              onClick={() => {setShowChecklist(true);setSecondsLeft(QUICK_EXIT_SECONDS)}}
               colorClass="bg-teal-50 border-teal-200 text-teal-800"
             />
             <FooterActionButton

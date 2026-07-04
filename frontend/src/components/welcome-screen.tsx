@@ -3,19 +3,7 @@
 import { useState, useRef } from 'react'
 import { Phone, X, HeartHandshake } from 'lucide-react'
 import { ChecklistModal } from './checklist-modal'
-
-const SAFE_URL = 'https://www.google.com/search?q=天気'
-
-const CATEGORIES: { emoji: string; label: string; comingSoon?: boolean }[] = [
-  { emoji: '💬', label: '生活費を渡してもらえない' },
-  { emoji: '📲', label: 'スマホをチェックされる' },
-  { emoji: '😔', label: '怒鳴られることが多い' },
-  { emoji: '🏠', label: '外出を制限される' },
-  { emoji: '❓', label: 'これってDV？' },
-  { emoji: '🏃', label: '今すぐ逃げたい' },
-  { emoji: '📝', label: '証拠の残し方', comingSoon: true },
-  { emoji: '👶', label: '子どもへの影響' },
-]
+import { SAFE_URL, CATEGORIES } from '@/lib/constants'
 
 interface Props {
   onOpenCategories: () => void

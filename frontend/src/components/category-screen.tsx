@@ -3,18 +3,7 @@
 import { useState } from 'react'
 import { Phone, X, Mic } from 'lucide-react'
 
-const SAFE_URL = 'https://www.google.com/search?q=天気'
-
-const CATEGORIES = [
-  { emoji: '💰', label: '生活費を\n渡してもらえない' },
-  { emoji: '📱', label: 'スマホを\nチェックされる' },
-  { emoji: '😡', label: '怒鳴られることが\n多い' },
-  { emoji: '🚪', label: '外出を\n制限される' },
-  { emoji: '❓', label: 'これって\nDV？' },
-  { emoji: '🆘', label: '今すぐ\n逃げたい' },
-  { emoji: '📸', label: '証拠の\n残し方' },
-  { emoji: '👧', label: '子どもへの\n影響' },
-]
+import { SAFE_URL, CATEGORIES, EMERGENCY_CONTACTS } from '@/lib/constants'
 
 interface Props {
   onBack: () => void
@@ -35,18 +24,18 @@ export function CategoryScreen({ onBack, onStartChat, idleSecondsLeft }: Props) 
       <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
         <div className="flex gap-2">
           <a
-            href="tel:110"
+            href={`${EMERGENCY_CONTACTS.police.tel}`}
             className="flex items-center gap-1.5 bg-[var(--color-danger)] text-white px-3 py-2 rounded-xl text-sm font-bold shadow-sm"
           >
             <Phone size={14} />
-            110
+            {EMERGENCY_CONTACTS.police.number}
           </a>
           <a
-            href="tel:#8891"
+            href={`${EMERGENCY_CONTACTS.oneStopSupport.tel}`}
             className="flex items-center gap-1.5 bg-[var(--color-danger)] text-white px-3 py-2 rounded-xl text-sm font-bold shadow-sm"
           >
             <Phone size={14} />
-            #8891
+            {EMERGENCY_CONTACTS.oneStopSupport.number}
           </a>
         </div>
         <button

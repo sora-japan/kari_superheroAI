@@ -5,16 +5,14 @@ import { SafetyModal } from '@/components/safety-modal'
 import { WelcomeScreen } from '@/components/welcome-screen'
 import { CategoryScreen } from '@/components/category-screen'
 import { ChatLayout } from '@/components/chat-layout'
-
-const SAFE_URL = 'https://www.google.com/search?q=天気'
-const PRE_CHAT_IDLE_SECONDS = 15 * 60
+import { QUICK_EXIT_SECONDS, SAFE_URL } from '@/lib/constants'
 
 type Screen = 'welcome' | 'category' | 'chat'
 
 export function AppShell() {
   const [screen, setScreen] = useState<Screen>('welcome')
   const [initialMessage, setInitialMessage] = useState<string | undefined>()
-  const [idleSecondsLeft, setIdleSecondsLeft] = useState(PRE_CHAT_IDLE_SECONDS)
+  const [idleSecondsLeft, setIdleSecondsLeft] = useState(QUICK_EXIT_SECONDS)
 
   // Prevent back-navigation to reveal this site
   useEffect(() => {
@@ -28,7 +26,7 @@ export function AppShell() {
   useEffect(() => {
     if (screen === 'chat') return
 
-    setIdleSecondsLeft(PRE_CHAT_IDLE_SECONDS)
+    setIdleSecondsLeft(QUICK_EXIT_SECONDS)
 
     const interval = setInterval(() => {
       setIdleSecondsLeft((prev) => {
