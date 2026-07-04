@@ -190,7 +190,7 @@ export function ChatLayout() {
             </div>
             {/* Input: fixed width, no mic */}
             <div className="w-full max-w-[320px]">
-              <div className="flex items-center bg-white border border-[var(--color-border)] rounded-2xl px-4 py-3 shadow-sm">
+              <div className="flex items-center bg-[var(--color-bg-secondary)] border border-[var(--color-border)] focus-within:border-[var(--color-accent)] focus-within:ring-1 focus-within:ring-[var(--color-accent)] rounded-xl px-4 py-3 shadow-sm transition-colors">
                 <input
                   ref={idleInputRef}
                   value={input}
