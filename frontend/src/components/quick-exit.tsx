@@ -2,9 +2,7 @@
 
 import { useEffect } from 'react'
 import { LogOut } from 'lucide-react'
-
-// 遷移先URL。Google天気など、履歴に残っても不自然でないページ
-const SAFE_URL = 'https://www.google.com/search?q=天気'
+import { SAFE_URL } from '@/lib/constants'
 
 export function QuickExit() {
   useEffect(() => {

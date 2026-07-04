@@ -4,8 +4,7 @@ import { useState, useRef } from 'react'
 import { Phone, X, HeartHandshake } from 'lucide-react'
 import { ChecklistModal } from './checklist-modal'
 import { CategoryModal } from './category-modal'
-
-const SAFE_URL = 'https://www.google.com/search?q=天気'
+import { SAFE_URL, CATEGORIES } from '@/lib/constants'
 
 interface Props {
   onStartChat: (message?: string) => void
