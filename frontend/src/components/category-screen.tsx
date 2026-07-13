@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { Phone, X, Mic } from 'lucide-react'
-
-const SAFE_URL = 'https://www.google.com/search?q=天気'
+import { safeExit } from '@/lib/safe-exit'
 
 const CATEGORIES = [
   { emoji: '💰', label: '生活費を\n渡してもらえない' },
@@ -50,7 +49,7 @@ export function CategoryScreen({ onBack, onStartChat, idleSecondsLeft }: Props) 
           </a>
         </div>
         <button
-          onClick={() => window.location.replace(SAFE_URL)}
+          onClick={safeExit}
           className="flex items-center gap-1.5 border-2 border-red-300 text-red-400 bg-red-50 px-3 py-2 rounded-xl text-sm font-bold transition-colors hover:bg-red-100"
         >
           <X size={14} />

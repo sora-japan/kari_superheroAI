@@ -5,9 +5,8 @@ import { Phone, X, Mic, Send, HeartHandshake, BookOpen } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '@/lib/api'
 import { getSessionId, storeSessionId } from '@/lib/session'
 import { ChecklistModal } from './checklist-modal'
+import { safeExit } from '@/lib/safe-exit'
 
-
-const SAFE_URL = 'https://www.google.com/search?q=天気'
 const SESSION_SECONDS = 15 * 60
 
 type DisplayMessage = ChatMessage & {
@@ -46,7 +45,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
     const interval = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
-          window.location.replace(SAFE_URL)
+          safeExit()
           return 0
         }
         return prev - 1
@@ -166,7 +165,7 @@ export function ChatLayout({ initialMessage, onOpenCategories }: Props) {
           </a>
         </div>
         <button
-          onClick={() => window.location.replace(SAFE_URL)}
+          onClick={safeExit}
           className="flex items-center gap-1.5 border-2 border-red-300 text-red-400 bg-red-50 px-3 py-2 rounded-xl text-sm font-bold transition-colors hover:bg-red-100"
         >
           <X size={14} />

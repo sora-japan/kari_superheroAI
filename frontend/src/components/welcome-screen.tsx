@@ -3,8 +3,7 @@
 import { useState, useRef } from 'react'
 import { Phone, X, HeartHandshake } from 'lucide-react'
 import { ChecklistModal } from './checklist-modal'
-
-const SAFE_URL = 'https://www.google.com/search?q=天気'
+import { safeExit } from '@/lib/safe-exit'
 
 const CATEGORIES: { emoji: string; label: string; comingSoon?: boolean }[] = [
   { emoji: '💬', label: '生活費を渡してもらえない' },
@@ -73,7 +72,7 @@ export function WelcomeScreen({ onOpenCategories: _onOpenCategories, onStartChat
           </a>
         </div>
         <button
-          onClick={() => window.location.replace(SAFE_URL)}
+          onClick={safeExit}
           className="flex items-center gap-1.5 border-2 border-red-300 text-red-400 bg-red-50 px-3 py-2 rounded-xl text-sm font-bold transition-colors hover:bg-red-100"
         >
           <X size={14} />
