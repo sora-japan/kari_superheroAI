@@ -5,14 +5,35 @@ export type ChatMessage = {
   content: string
 }
 
-export async function sendMessage(
-  message: string,
+export type ChatMessagesParams = {
+  message?: string
+  category?: string
+  quickReply?: string
+}
+
+type BackendMessageItem = {
+  role: 'user' | 'ai'
+  message: string
+}
+
+export type ChatMessagesResponse = {
+  messages: BackendMessageItem[]
+  session_id: string
+}
+
+export async function sendChatMessages(
+  params: ChatMessagesParams,
   sessionId: string | null,
-): Promise<{ reply: string; session_id: string }> {
-  const res = await fetch(`${API_BASE}/api/v1/chat`, {
+): Promise<ChatMessagesResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/chat/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, session_id: sessionId }),
+    body: JSON.stringify({
+      message: params.message ?? '',
+      category: params.category,
+      quickReply: params.quickReply,
+      session_id: sessionId,
+    }),
   })
 
   if (!res.ok) {

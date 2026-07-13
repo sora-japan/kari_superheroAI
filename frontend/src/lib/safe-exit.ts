@@ -1,5 +1,4 @@
-// 安全な脱出先。Google天気など、履歴に残っても不自然でないページ。
-export const SAFE_URL = 'https://www.google.com/search?q=天気'
+import { SAFE_URL } from '@/lib/constants'
 
 // 「すぐ閉じる」や自動タイムアウト時に呼ぶ共通の脱出処理。
 //
