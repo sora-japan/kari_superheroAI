@@ -1,13 +1,37 @@
+import asyncio
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.api.v1.routes import health, chat, session
+from app.api.v1.routes.chat import chat_histories, session_last_access
+
+async def cleanup_expired_sessions() -> None:
+    while True:
+        await asyncio.sleep(settings.session_sweep_interval_seconds)
+        now = datetime.now()
+        timeout = timedelta(minutes=settings.session_ttl_minutes)
+        expired_ids = [session_id for session_id, last_access in session_last_access.items() 
+                       if now - last_access > timeout]
+        for session_id in expired_ids:
+                del chat_histories[session_id]
+                del session_last_access[session_id]
+                print(f"Session {session_id} expired and cleaned up.")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(cleanup_expired_sessions())
+    yield
+    task.cancel()
 
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
     docs_url="/docs" if settings.debug else None,
+    lifespan=lifespan,
 )
 
 app.add_middleware(

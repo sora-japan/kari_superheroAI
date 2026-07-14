@@ -6,11 +6,13 @@ import uuid
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from app.core.config import settings
+from datetime import datetime
 
 router = APIRouter()
 
 # session_id → メッセージ履歴 のインメモリストア
 chat_histories: dict[str, list[dict]] = {}
+session_last_access: dict[str, datetime] = {}
 
 SYSTEM_PROMPT = """あなたはDV（家庭内暴力）被害者を支援するAIカウンセラーです。
 以下の方針で対応してください。
@@ -72,12 +74,14 @@ def _get_ai_reply(session_id: str, category: str | None = None) -> str:
     if not settings.google_api_key or settings.google_api_key == "your_gemini_api_key_here":
         # スタブ応答でフロー全体をテスト
         last_message = chat_histories[session_id][-1]["message"]
+        print(chat_histories)
+
         return f"（テスト応答）「{last_message}」について受け付けました。"
 
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         google_api_key=settings.google_api_key,
-    )
+    ).with_retry(stop_after_attempt=3)
     lc_messages = _build_lc_messages(chat_histories[session_id], category=category)
     response = llm.invoke(lc_messages)
     return str(response.content)
@@ -89,11 +93,14 @@ async def chat(req: ChatRequest):
 
     if session_id not in chat_histories:
         chat_histories[session_id] = []
+    session_last_access[session_id] = datetime.now()
 
     chat_histories[session_id].append({"role": "user", "message": req.message})
 
     reply = _get_ai_reply(session_id)
     chat_histories[session_id].append({"role": "ai", "message": reply})
+
+    session_last_access[session_id] = datetime.now()
 
     return ChatResponse(reply=reply, session_id=session_id)
 
@@ -105,6 +112,7 @@ async def chat_messages(req: ChatMessagesRequest):
 
     if session_id not in chat_histories:
         chat_histories[session_id] = []
+    session_last_access[session_id] = datetime.now()
 
     user_text = req.message.strip() or req.quickReply or req.category
     if not user_text:

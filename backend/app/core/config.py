@@ -15,6 +15,8 @@ class Settings(BaseSettings):
         "http://127.0.0.1:8000",
     ]
     google_api_key: str = ""
+    session_ttl_minutes: int = 15
+    session_sweep_interval_seconds: int = 60
 
     class Config:
         env_file = ".env"
