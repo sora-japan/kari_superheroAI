@@ -329,8 +329,11 @@ export function ChatLayout() {
         </>
       )}
 
-      {/* 個人情報リンク: 最下部に固定 */}
-      <div className="flex-shrink-0 py-3 text-center border-t border-[var(--color-border)]">
+      {/* 免責文言 + 個人情報リンク: 最下部に固定 */}
+      <div className="flex-shrink-0 py-3 text-center border-t border-[var(--color-border)] space-y-1.5 px-4">
+        <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed">
+          ※ AIの回答は一般的な情報提供であり、法的・医療的な助言に代わるものではありません。個別のご判断は専門家・相談窓口にご確認ください。
+        </p>
         <a
           href="#"
           onClick={(e) => e.preventDefault()}
