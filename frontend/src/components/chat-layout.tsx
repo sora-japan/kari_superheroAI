@@ -7,7 +7,8 @@ import { getSessionId, storeSessionId } from '@/lib/session'
 import { ChecklistModal } from './checklist-modal'
 import { CategoryModal } from './category-modal'
 import { SafetyModal } from './safety-modal'
-import { SAFE_URL, QUICK_EXIT_SECONDS, EMERGENCY_CONTACTS } from '@/lib/constants'
+import { QUICK_EXIT_SECONDS, EMERGENCY_CONTACTS } from '@/lib/constants'
+import { safeExit } from '@/lib/safe-exit'
 
 type DisplayMessage = ChatMessage & {
   timestamp: Date
@@ -35,7 +36,7 @@ export function ChatLayout() {
     const interval = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
-          window.location.replace(SAFE_URL)
+          safeExit()
           return 0
         }
         return prev - 1
@@ -146,7 +147,7 @@ export function ChatLayout() {
           </a>
         </div>
         <button
-          onClick={() => window.location.replace(SAFE_URL)}
+          onClick={safeExit}
           className="flex items-center gap-1.5 border-2 border-red-300 text-red-400 bg-red-50 px-3 py-2 rounded-xl text-sm font-bold transition-colors hover:bg-red-100"
         >
           <X size={14} />
