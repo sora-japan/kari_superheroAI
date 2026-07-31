@@ -371,7 +371,7 @@ function MessageBubble({
         )}
         <div
           className={`
-            max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap
+            max-w-[min(78vw,320px)] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap
             ${isUser
               ? 'bg-[var(--color-bubble-user)] text-[var(--color-text-primary)] rounded-tr-sm'
               : 'bg-[var(--color-bubble-ai)] text-[var(--color-text-primary)] rounded-tl-sm'
