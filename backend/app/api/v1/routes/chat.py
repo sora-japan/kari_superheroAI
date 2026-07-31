@@ -1,14 +1,16 @@
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 import uuid
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from app.core.config import settings
+from app.core.rate_limit import check_rate_limit
+from app.core.security import verify_api_key
 from datetime import datetime
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_api_key)])
 
 # session_id → メッセージ履歴 のインメモリストア
 chat_histories: dict[str, list[dict]] = {}
@@ -90,6 +92,7 @@ def _get_ai_reply(session_id: str, category: str | None = None) -> str:
 @router.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     session_id = req.session_id or str(uuid.uuid4())
+    check_rate_limit(session_id)
 
     if session_id not in chat_histories:
         chat_histories[session_id] = []
@@ -109,6 +112,7 @@ async def chat(req: ChatRequest):
 async def chat_messages(req: ChatMessagesRequest):
     """チェックリスト／カテゴリー選択／クイックリプライからの入力をAIに渡して応答を返す。"""
     session_id = req.session_id or str(uuid.uuid4())
+    check_rate_limit(session_id)
 
     if session_id not in chat_histories:
         chat_histories[session_id] = []

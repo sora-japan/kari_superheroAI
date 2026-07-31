@@ -2,6 +2,7 @@
 
 # dependencies
 __pycache__/
+.venv/
 
 # env files (can opt-in for committing if needed)
 .env*

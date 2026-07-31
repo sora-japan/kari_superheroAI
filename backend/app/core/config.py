@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     google_api_key: str = ""
     session_ttl_minutes: int = 15
     session_sweep_interval_seconds: int = 60
+    x_api_key: str = ""
+    rate_limit_per_minute: int = 10
+    rate_limit_session_max: int = 30
 
     class Config:
         env_file = ".env"
