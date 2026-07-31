@@ -305,7 +305,7 @@ export function ChatLayout() {
               <div className="flex gap-2">
                 <FooterActionButton
                   emoji="📁"
-                  label="カテゴリを選ぶ"
+                  label="よくある相談"
                   sub="相談内容から選択"
                   onClick={() => {setShowCategoryModal(true);setSecondsLeft(QUICK_EXIT_SECONDS)}}
                   colorClass="bg-amber-50 border-amber-200 text-amber-800"
