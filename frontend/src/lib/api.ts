@@ -25,7 +25,8 @@ export async function sendChatMessages(
   params: ChatMessagesParams,
   sessionId: string | null,
 ): Promise<ChatMessagesResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/chat/messages`, {
+  // APIキーはブラウザに出せないため、Next.jsサーバー側のRoute Handler経由でbackendへ送る
+  const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
