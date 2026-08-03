@@ -7,7 +7,11 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # ブラウザから叩くURL（ホスト側のポートマッピング経由）
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      # Route Handlerはコンテナ内で動くため、backendへはサービス名で到達する
+      - API_URL=http://backend:8000
+      - X_API_KEY=${X_API_KEY}
     volumes:
       - ./frontend:/app
       - /app/node_modules
