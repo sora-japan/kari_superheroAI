@@ -1,3 +1,4 @@
+import json
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,14 +8,27 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from app.core.config import settings
 from app.core.rate_limit import check_rate_limit
+from app.core.redis_client import get_redis
 from app.core.security import verify_api_key
-from datetime import datetime
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
-# session_id → メッセージ履歴 のインメモリストア
-chat_histories: dict[str, list[dict]] = {}
-session_last_access: dict[str, datetime] = {}
+_SESSION_TTL_SECONDS = settings.session_ttl_minutes * 60
+
+
+def _history_key(session_id: str) -> str:
+    return f"chat:history:{session_id}"
+
+
+async def _load_history(session_id: str) -> list[dict]:
+    redis = get_redis()
+    raw = await redis.get(_history_key(session_id))
+    return json.loads(raw) if raw else []
+
+
+async def _save_history(session_id: str, history: list[dict]) -> None:
+    redis = get_redis()
+    await redis.set(_history_key(session_id), json.dumps(history, ensure_ascii=False), ex=_SESSION_TTL_SECONDS)
 
 SYSTEM_PROMPT = """あなたはDV（家庭内暴力）被害者を支援するAIカウンセラーです。
 以下の方針で対応してください。
@@ -72,19 +86,17 @@ def _build_lc_messages(history: list[dict], category: str | None = None) -> list
     return messages
 
 
-def _get_ai_reply(session_id: str, category: str | None = None) -> str:
+def _get_ai_reply(history: list[dict], category: str | None = None) -> str:
     if not settings.google_api_key or settings.google_api_key == "your_gemini_api_key_here":
         # スタブ応答でフロー全体をテスト
-        last_message = chat_histories[session_id][-1]["message"]
-        print(chat_histories)
-
+        last_message = history[-1]["message"]
         return f"（テスト応答）「{last_message}」について受け付けました。"
 
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         google_api_key=settings.google_api_key,
     ).with_retry(stop_after_attempt=3)
-    lc_messages = _build_lc_messages(chat_histories[session_id], category=category)
+    lc_messages = _build_lc_messages(history, category=category)
     response = llm.invoke(lc_messages)
     return str(response.content)
 
@@ -92,18 +104,14 @@ def _get_ai_reply(session_id: str, category: str | None = None) -> str:
 @router.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     session_id = req.session_id or str(uuid.uuid4())
-    check_rate_limit(session_id)
+    await check_rate_limit(session_id)
 
-    if session_id not in chat_histories:
-        chat_histories[session_id] = []
-    session_last_access[session_id] = datetime.now()
+    history = await _load_history(session_id)
+    history.append({"role": "user", "message": req.message})
 
-    chat_histories[session_id].append({"role": "user", "message": req.message})
-
-    reply = _get_ai_reply(session_id)
-    chat_histories[session_id].append({"role": "ai", "message": reply})
-
-    session_last_access[session_id] = datetime.now()
+    reply = _get_ai_reply(history)
+    history.append({"role": "ai", "message": reply})
+    await _save_history(session_id, history)
 
     return ChatResponse(reply=reply, session_id=session_id)
 
@@ -112,11 +120,9 @@ async def chat(req: ChatRequest):
 async def chat_messages(req: ChatMessagesRequest):
     """チェックリスト／カテゴリー選択／クイックリプライからの入力をAIに渡して応答を返す。"""
     session_id = req.session_id or str(uuid.uuid4())
-    check_rate_limit(session_id)
+    await check_rate_limit(session_id)
 
-    if session_id not in chat_histories:
-        chat_histories[session_id] = []
-    session_last_access[session_id] = datetime.now()
+    history = await _load_history(session_id)
 
     user_text = req.message.strip() or req.quickReply or req.category
     if not user_text:
@@ -125,10 +131,11 @@ async def chat_messages(req: ChatMessagesRequest):
             detail="message, category, quickReply のいずれかを指定してください。",
         )
 
-    chat_histories[session_id].append({"role": "user", "message": user_text})
+    history.append({"role": "user", "message": user_text})
 
-    reply = _get_ai_reply(session_id, category=req.category)
-    chat_histories[session_id].append({"role": "ai", "message": reply})
+    reply = _get_ai_reply(history, category=req.category)
+    history.append({"role": "ai", "message": reply})
+    await _save_history(session_id, history)
 
     return ChatMessagesResponse(
         messages=[
